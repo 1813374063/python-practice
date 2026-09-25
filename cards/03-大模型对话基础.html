@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学习卡片 03 · 大模型对话基础</title>
+<style>
+  * { box-sizing: border-box; }
+  html { background: #eef1f4; }
+  body {
+    margin: 0 auto; padding: 56px 64px 48px; background: #ffffff; color: #1f2937;
+    font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.75; max-width: 1240px;
+  }
+  .kicker { display: inline-block; background: #0f766e; color: #fff; font-size: 15px; font-weight: 700;
+    padding: 4px 14px; border-radius: 999px; margin-bottom: 14px; }
+  .title { font-size: 40px; font-weight: 700; margin: 0 0 6px; color: #111827; }
+  .subtitle { font-size: 18px; color: #6b7280; margin: 0 0 18px; }
+  .rule { height: 5px; width: 120px; background: #0f766e; border-radius: 3px; margin-bottom: 40px; }
+  h2 { font-size: 25px; margin: 46px 0 16px; padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 12px; color: #111827; }
+  h2 .num { display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 34px; height: 34px; border-radius: 50%; background: #0f766e; color: #fff; font-size: 18px; font-weight: 700; }
+  h3 { font-size: 19px; margin: 24px 0 10px; color: #0f766e; }
+  p { margin: 10px 0; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 15.5px;
+    background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 6px; color: #0f172a; }
+  pre { background: #f8fafc; border: 1px solid #e5e7eb; border-left: 4px solid #0f766e;
+    border-radius: 6px; padding: 14px 18px; margin: 12px 0; overflow-x: auto;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 15px; line-height: 1.65; color: #0f172a; }
+  pre code { background: none; border: none; padding: 0; font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 16.5px; }
+  th { background: #f3f4f6; text-align: left; font-weight: 700; color: #111827; }
+  th, td { border: 1px solid #e5e7eb; padding: 10px 14px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  .alert { background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #0f766e;
+    border-radius: 8px; padding: 14px 20px; margin: 16px 0; }
+  .alert.warn { background: #fffbeb; border-color: #fde68a; border-left-color: #b45309; }
+  ol, ul { margin: 10px 0; padding-left: 26px; }
+  li { margin: 6px 0; }
+  ul.check { list-style: none; padding-left: 4px; }
+  ul.check li { padding-left: 30px; position: relative; }
+  ul.check li::before { content: "☐"; position: absolute; left: 0; color: #0f766e; font-size: 19px; }
+  .note { color: #6b7280; font-size: 15.5px; }
+  .footer { margin-top: 48px; padding-top: 18px; border-top: 2px solid #e5e7eb; color: #9ca3af; font-size: 15px;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  @media (max-width: 860px) { body { padding: 28px 20px; font-size: 16px; } .title { font-size: 28px; }
+    h2 { font-size: 21px; } pre { font-size: 13.5px; } table { font-size: 15px; } }
+  @media print { html { background: #fff; } body { max-width: none; padding: 0; }
+    pre, table, .alert { break-inside: avoid; } h2 { break-inside: avoid; } }
+</style>
+</head>
+<body>
+  <div class="kicker">学习卡片 03</div>
+  <div class="title">大模型对话基础</div>
+  <div class="subtitle">模型没有记忆 · 三种角色 · 请求与响应的结构</div>
+  <div class="rule"></div>
+
+  <h2><span class="num">1</span>本环节目标</h2>
+  <p>能写出一个<b>连续对话</b>的脚本，并说清"模型为什么能接上话"。</p>
+  <div class="alert">
+    <b>一句话原理</b>：模型本身没有记忆，每一次请求都是独立的；"它记得上一句"是我们把全部历史一起发过去的功劳。
+  </div>
+
+  <h2><span class="num">2</span>核心概念</h2>
+
+  <h3>2.1 模型是"无状态"的</h3>
+  <ul>
+    <li>每次调用 <code>create()</code> 都是全新的一次请求，模型看不到你上一次问了什么</li>
+    <li>所谓"连续对话"，是程序把<b>全部历史</b>打包发过去实现的</li>
+    <li>因此历史越长，请求越大、消耗越多 → 真实产品会做"历史管理"（截断、摘要）</li>
+  </ul>
+
+  <h3>2.2 三种角色（role）</h3>
+  <table>
+    <tr><th style="width:18%">角色</th><th style="width:18%">谁在说话</th><th>作用</th></tr>
+    <tr><td><code>system</code></td><td>幕后导演</td><td>给模型定身份、语气和规矩；用户看不到它</td></tr>
+    <tr><td><code>user</code></td><td>用户</td><td>提出问题</td></tr>
+    <tr><td><code>assistant</code></td><td>模型</td><td>它之前的回答（必须由程序存回历史）</td></tr>
+  </table>
+
+  <h3>2.3 对话历史就是一个"列表装字典"</h3>
+  <pre><code>history = [
+    {"role": "system",    "content": "你是一位医院信息科的资深工程师……"},
+    {"role": "user",      "content": "什么是RAG？"},
+    {"role": "assistant", "content": "RAG就是先查资料再回答……"},
+    {"role": "user",      "content": "它和微调有什么区别？"},
+]</code></pre>
+  <p class="note">这和第1阶段学的 <code>records = [{"科室": "内科", ...}, ...]</code> 是同一种结构——列表装字典。只是这次装的不是业务记录，而是对话记录。</p>
+
+  <h3>2.4 响应是个对象，用点号逐层取值</h3>
+  <pre><code>response.choices[0].message.content</code></pre>
+  <table>
+    <tr><th style="width:50%">打印里看到的</th><th>代码里对应</th></tr>
+    <tr><td><code>ChatCompletion(...)</code></td><td><code>response</code></td></tr>
+    <tr><td><code>choices=[Choice(...)]</code></td><td><code>response.choices</code>（列表）</td></tr>
+    <tr><td><code>Choice(index=0, ...)</code></td><td><code>response.choices[0]</code></td></tr>
+    <tr><td><code>message=ChatCompletionMessage(...)</code></td><td><code>response.choices[0].message</code></td></tr>
+    <tr><td><code>content='...'</code></td><td><code>response.choices[0].message.content</code>（正文）</td></tr>
+  </table>
+  <h3>2.5 几个值得记住的字段</h3>
+  <table>
+    <tr><th style="width:22%">字段</th><th style="width:38%">含义</th><th>用途</th></tr>
+    <tr><td><code>id</code></td><td>本次请求的唯一编号</td><td>找平台排查问题时报它，定位最快</td></tr>
+    <tr><td><code>finish_reason</code></td><td><code>stop</code>=正常说完，<code>length</code>=被长度截断</td><td>排查"回答不完整"</td></tr>
+    <tr><td><code>choices</code></td><td>候选答案列表</td><td>我们只取第 0 个</td></tr>
+    <tr><td><code>logprobs</code></td><td>词概率，默认 <code>None</code></td><td>可选功能，暂不使用</td></tr>
+  </table>
+
+  <h2><span class="num">3</span>操作流程</h2>
+  <pre><code>from openai import OpenAI
+
+BASE_URL = "https://api.deepseek.com"
+MODEL = "deepseek-flash"
+
+with open("key.txt", encoding="utf-8") as f:
+    api_key = f.read().strip()
+
+client = OpenAI(api_key=api_key, base_url=BASE_URL)
+
+history = [
+    {"role": "system", "content": "你是一位医院信息科的资深工程师，回答专业、简洁，每次不超过100字。"}
+]
+
+print("开始对话吧，输入 exit 退出。\n")
+
+while True:
+    question = input("我：")
+    if question == "exit":
+        break
+
+    history.append({"role": "user", "content": question})                       # 1 收下用户的话
+
+    response = client.chat.completions.create(model=MODEL, messages=history)    # 2 全量发送
+    answer = response.choices[0].message.content
+
+    history.append({"role": "assistant", "content": answer})                    # 3 存回模型的话
+
+    print("AI：" + answer + "\n")</code></pre>
+  <h3>三个要点</h3>
+  <ol>
+    <li><code>history</code> 初始化在<b>循环之外</b>——写在循环里会每轮清空，模型立刻失忆</li>
+    <li>发送的是<b>整个 history</b>，不是这一句话——这就是"打包"的含义</li>
+    <li>模型的回答必须 <code>append</code> 回历史（第 3 步），否则下一轮它不知道自己说过什么</li>
+  </ol>
+  <p class="note">运行方式：<code>cd ai_practice</code> 然后 <code>python chat.py</code>。因为有 <code>input()</code> 要等你打字，必须在<b>终端</b>里运行。</p>
+
+  <h2><span class="num">4</span>常见报错与排查</h2>
+  <table>
+    <tr><th style="width:40%">报错 / 现象</th><th style="width:24%">原因</th><th>解决</th></tr>
+    <tr><td><code>TypeError: Missing required arguments; Expected either ('messages' and 'model') or ...</code></td><td>参数名写错（例如写成 <code>history=history</code>）</td><td>参数名按接口规定写：<code>model=</code>、<code>messages=</code>，左边不能改</td></tr>
+    <tr><td><code>400 invalid_request_error</code>（模型名不支持）</td><td>模型名写错，或平台不支持</td><td>用服务端返回的支持列表／官方文档里的名字，注意大小写</td></tr>
+    <tr><td><code>401 AuthenticationError</code></td><td>key 错误、失效或没读到</td><td>检查 <code>key.txt</code>；确认它被 .gitignore 忽略</td></tr>
+    <tr><td>AI 答非所问、像"失忆"</td><td>忘了把模型回答 append 回历史</td><td>检查第 3 步那行代码</td></tr>
+    <tr><td>回答满屏 <code>\n</code>、挤成一坨</td><td>打印的是对象，不是字符串</td><td>打印 <code>response.choices[0].message.content</code></td></tr>
+    <tr><td><code>finish_reason='length'</code></td><td>回答被长度限制截断</td><td>放宽长度限制，或要求模型更简洁</td></tr>
+  </table>
+  <div class="alert warn">
+    <b>排查心法</b>：看不懂的返回值，先 <code>print(type(x))</code> 和 <code>print(x)</code> 看一眼结构；<b>调试代码用完即删</b>，别留在正式脚本里。
+  </div>
+
+  <h2><span class="num">5</span>自查清单</h2>
+  <ul class="check">
+    <li>能不看代码说清"AI 为什么能接上话"</li>
+    <li>能说出 system / user / assistant 三种角色的区别</li>
+    <li>能逐层解释 <code>response.choices[0].message.content</code> 的取值过程</li>
+    <li>能说明 <code>finish_reason</code> 为 stop 和 length 的差别</li>
+    <li>能独立写出带 system 设定的多轮对话脚本</li>
+    <li>看到"缺少必填参数"的报错，第一反应是检查参数名拼写</li>
+    <li>知道 <code>history</code> 必须初始化在循环之外</li>
+  </ul>
+
+  <h2><span class="num">6</span>本课实测记录</h2>
+  <table>
+    <tr><th style="width:38%">实验</th><th>观察到的结果</th></tr>
+    <tr><td>把 system 改成"医院信息科工程师 + 科普作者、多用比喻"</td><td>同一个模型、同一个问题，输出风格明显变化（用"超级实习生""旋钮"打比方）——<b>提示词确实能控制输出</b></td></tr>
+    <tr><td>把"模型回答 append 回历史"注释掉</td><td>AI 开始答非所问——<b>证明模型本身无记忆</b></td></tr>
+    <tr><td>把参数名 <code>messages=</code> 写成 <code>history=</code></td><td>报 <code>TypeError: Missing required arguments</code>——<b>证明参数名由接口规定，不能改</b></td></tr>
+  </table>
+
+  <h2><span class="num">7</span>来源与参考</h2>
+  <table>
+    <tr><th style="width:44%">资料</th><th>链接</th></tr>
+    <tr><td>DeepSeek 官方文档首页</td><td><code>https://api-docs.deepseek.com/</code></td></tr>
+    <tr><td>多轮对话指南（本课核心依据）</td><td><code>https://api-docs.deepseek.com/guides/multi_round_chat</code></td></tr>
+    <tr><td>Chat Completion API 参考</td><td><code>https://api-docs.deepseek.com/api/create-chat-completion</code></td></tr>
+    <tr><td>定价与可用模型</td><td><code>https://api-docs.deepseek.com/quick_start/pricing</code></td></tr>
+  </table>
+  <p class="note">以上链接于 2026-09-25 实测可访问（HTTP 200）。模型名 <code>deepseek-flash</code> 来源于实际调用时服务端返回的支持列表；价格与可用模型会变动，<b>以官方页面为准</b>。</p>
+
+  <div class="footer">
+    <span>学习卡片 03 · 第 2 阶段 第 2 课</span>
+    <span>生成日期 2026-09-25</span>
+  </div>
+</body>
+</html>
