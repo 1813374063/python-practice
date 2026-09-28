@@ -1,13 +1,16 @@
 import json
 import sys
 import time
+from pathlib import Path
 
 from openai import OpenAI
 
 BASE_URL = "https://api.deepseek.com"
 MODEL = "deepseek-flash"
 
-with open("key.txt", encoding="utf-8") as f:
+KEY_PATH = Path(__file__).resolve().parents[1] / "key.txt"
+
+with open(KEY_PATH, encoding="utf-8") as f:
     api_key = f.read().strip()
 
 client = OpenAI(api_key=api_key, base_url=BASE_URL)
@@ -356,7 +359,10 @@ summary = {
     "results": evaluation_results,
 }
 
-output_path = f"prompt_eval_results_{mode_name}.json"
+output_path = (
+    Path(__file__).resolve().parent
+    / f"prompt_eval_results_{mode_name}.json"
+)
 
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(summary, f, ensure_ascii=False, indent=2)

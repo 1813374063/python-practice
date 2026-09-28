@@ -111,7 +111,7 @@
 
 
 # # -------------------------------------------------------------
-# 数据文件在本文件夹的 C:\Users\15634\Documents\New_project/python_test/data/workload.csv`（提示：open 时加上 `encoding="utf-8"`，否则中文可能乱码）。
+# 数据文件在本课目录的 data/workload.csv（提示：open 时加上 encoding="utf-8"，否则中文可能乱码）。
 
 ### 3-1 计算平均工作量
 
@@ -127,13 +127,18 @@
 # - 如果数据文件不存在，程序打印"找不到数据文件，请检查路径"后正常退出，而不是直接报错崩溃
 
 import sys
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_PATH = BASE_DIR / "data" / "workload.csv"
+RESULT_PATH = BASE_DIR / "result.txt"
 
 
 sums = {}
 counts = {}
 skipped = 0
 try:
-    with open("python-test/data/workload.csv", encoding="utf-8") as f:
+    with open(DATA_PATH, encoding="utf-8") as f:
         next(f)  # 跳过表头
         for line in f:
             dept,mouth,workload = line.strip().split(',')
@@ -153,7 +158,7 @@ except FileNotFoundError:
     print("文件未找到，请检查路径是否正确。")
     sys.exit()
 
-with open('python-test/result.txt', 'w', encoding='utf-8') as f:
+with open(RESULT_PATH, 'w', encoding='utf-8') as f:
     for dept in sums:
         avg = round(sums[dept]/counts[dept])
         f.write(f'{dept},平均值为：{avg}\n')
