@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_PATH = BASE_DIR / "chunks.json"
+OUTPUT_PATH = BASE_DIR / "1.3-chunks.json"
 
 POLICY_TEXT = """# 门诊信息系统故障分级与处理办法
 

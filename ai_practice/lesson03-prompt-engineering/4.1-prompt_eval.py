@@ -359,10 +359,15 @@ summary = {
     "results": evaluation_results,
 }
 
-output_path = (
-    Path(__file__).resolve().parent
-    / f"prompt_eval_results_{mode_name}.json"
-)
+output_paths = {
+    "smoke": Path(__file__).resolve().parent
+    / "4.3-prompt_eval_results_smoke.json",
+    "fast": Path(__file__).resolve().parent
+    / "4.4-prompt_eval_results_fast.json",
+    "full": Path(__file__).resolve().parent
+    / "4.5-prompt_eval_results_full.json",
+}
+output_path = output_paths[mode_name]
 
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(summary, f, ensure_ascii=False, indent=2)
