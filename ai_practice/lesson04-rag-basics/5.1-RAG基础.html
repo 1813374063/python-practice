@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 4 课知识卡片 · RAG 基础</title>
+<style>
+  * { box-sizing: border-box; }
+  html { background: #eef1f4; }
+  body {
+    margin: 0 auto; padding: 56px 64px 48px; background: #ffffff; color: #1f2937;
+    font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.75; max-width: 1240px;
+  }
+  .kicker { display: inline-block; background: #0f766e; color: #fff; font-size: 15px; font-weight: 700;
+    padding: 4px 14px; border-radius: 999px; margin-bottom: 14px; }
+  .title { font-size: 40px; font-weight: 700; margin: 0 0 6px; color: #111827; }
+  .subtitle { font-size: 18px; color: #6b7280; margin: 0 0 18px; }
+  .rule { height: 5px; width: 120px; background: #0f766e; border-radius: 3px; margin-bottom: 40px; }
+  h2 { font-size: 25px; margin: 46px 0 16px; padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 12px; color: #111827; }
+  h2 .num { display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 34px; height: 34px; border-radius: 50%; background: #0f766e; color: #fff; font-size: 18px; font-weight: 700; }
+  h3 { font-size: 19px; margin: 24px 0 10px; color: #0f766e; }
+  p { margin: 10px 0; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 15.5px;
+    background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 6px; color: #0f172a; }
+  pre { background: #f8fafc; border: 1px solid #e5e7eb; border-left: 4px solid #0f766e;
+    border-radius: 6px; padding: 14px 18px; margin: 12px 0; overflow-x: auto;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 15px; line-height: 1.65; color: #0f172a; }
+  pre code { background: none; border: none; padding: 0; font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 16.5px; }
+  th { background: #f3f4f6; text-align: left; font-weight: 700; color: #111827; }
+  th, td { border: 1px solid #e5e7eb; padding: 10px 14px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  .box { border: 1px solid #dbeafe; background: #eff6ff; border-radius: 6px; padding: 14px 18px; margin: 14px 0; }
+  .warn { border-color: #fed7aa; background: #fff7ed; }
+  .good { border-color: #bbf7d0; background: #f0fdf4; }
+  ul { margin: 8px 0 8px 22px; padding: 0; }
+  li { margin: 5px 0; }
+  .footer { margin-top: 52px; padding-top: 18px; border-top: 1px solid #e5e7eb;
+    display: flex; justify-content: space-between; color: #6b7280; font-size: 14px; }
+  @media (max-width: 720px) {
+    body { padding: 28px 20px 36px; font-size: 16px; }
+    .title { font-size: 30px; }
+    h2 { font-size: 22px; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+  <div class="kicker">第 4 课 · RAG 基础</div>
+  <h1 class="title">检索增强生成（RAG）</h1>
+  <p class="subtitle">从外部资料检索到可校验回答的完整最小流程</p>
+  <div class="rule"></div>
+
+  <h2><span class="num">1</span>为什么需要 RAG</h2>
+  <div class="box">
+    模型参数保存训练阶段的知识，但无法自动知道医院刚发布的最新制度。RAG 在每次回答前检索外部资料，再把资料放入当前提示词。
+  </div>
+  <pre><code>参数记忆：固定在模型版本中的知识
+非参数记忆：外部文档和数据库中的资料
+
+RAG = Retrieval + Augmented + Generation
+    = 检索     + 增强      + 生成</code></pre>
+
+  <h2><span class="num">2</span>最小数据流</h2>
+  <pre><code>知识资料
+→ 按章节切分
+→ 提取问题关键词
+→ 给资料评分和排序
+→ 选择前几名
+→ 组装 system 和 user 消息
+→ 模型生成回答
+→ 校验字段和引用来源</code></pre>
+  <div class="warn box">
+    RAG 不会修改模型参数，也不能保证答案一定正确。检索资料错误时，回答仍可能错误。
+  </div>
+
+  <h2><span class="num">3</span>资料准备</h2>
+  <p>长制度不能整篇直接发送，需要按章节或语义边界切分成片段。</p>
+  <table>
+    <tr><th>策略</th><th>结果</th></tr>
+    <tr><td>按章节切分</td><td>保留完整制度含义</td></tr>
+    <tr><td>固定字数切分</td><td>可能切断句子或流程</td></tr>
+    <tr><td>片段太小</td><td>缺少上下文</td></tr>
+    <tr><td>片段太大</td><td>混入无关内容，增加 token</td></tr>
+  </table>
+  <p>片段应保存 <code>chunk_id</code>、标题、正文、版本和访问级别。当前虚构制度被切成 5 个片段。</p>
+
+  <h2><span class="num">4</span>关键词检索</h2>
+  <p>当前最小实现使用关键词匹配：</p>
+  <pre><code>标题命中 × 4
+正文命中 × 1
+按总分降序排列
+默认取前 3 名</code></pre>
+  <table>
+    <tr><th>问题</th><th>第一名资料</th><th>分数</th></tr>
+    <tr><td>病历保存接口超时</td><td>KB-002</td><td>24</td></tr>
+    <tr><td>门诊叫号大屏黑屏</td><td>KB-001</td><td>21</td></tr>
+    <tr><td>新护士无法登录和查看排班</td><td>KB-003</td><td>3</td></tr>
+    <tr><td>药房无法打印处方</td><td>KB-004</td><td>13</td></tr>
+    <tr><td>门诊日报汇总不一致</td><td>KB-007</td><td>12</td></tr>
+  </table>
+  <div class="warn box">
+    分数不是概率或准确率。共同词会造成误召回，例如“门诊日报”错误召回“门诊叫号大屏”。
+  </div>
+
+  <h2><span class="num">5</span>Grounded Prompt</h2>
+  <p>检索资料通过 <code>messages</code> 交给模型：</p>
+  <pre><code>system：只能根据资料回答
+        不得编造院内制度
+        必须保留资料编号
+        资料不足必须明确说明
+
+user：  [KB-007] 资料标题
+        资料正文
+
+        当前用户问题</code></pre>
+  <div class="good box">
+    最终回答格式包含 <code>answer</code>、<code>used_sources</code>、<code>insufficient</code> 和 <code>need_human_review</code>。
+  </div>
+
+  <h2><span class="num">6</span>本次模型验证</h2>
+  <p>问题：门诊日报汇总数和明细数不一致，应该核对哪些内容？</p>
+  <pre><code>召回资料：KB-007、KB-001
+
+模型回答：
+根据 KB-007，应固定统计时间范围、科室范围和指标口径，
+并核对源数据、清洗规则和报表计算公式，
+同时保留查询条件和结果作为证据。
+
+used_sources：["KB-007"]
+insufficient：false
+need_human_review：false</code></pre>
+  <table>
+    <tr><th>Token 项</th><th>数量</th></tr>
+    <tr><td>prompt_tokens</td><td>355</td></tr>
+    <tr><td>completion_tokens</td><td>164</td></tr>
+    <tr><td>reasoning_tokens</td><td>92</td></tr>
+    <tr><td>visible_completion_tokens</td><td>72</td></tr>
+    <tr><td>total_tokens</td><td>519</td></tr>
+  </table>
+  <p>模型正确忽略无关的 KB-001，只引用实际支持回答的 KB-007。</p>
+
+  <h2><span class="num">7</span>程序校验与人工复核</h2>
+  <table>
+    <tr><th>层次</th><th>检查内容</th></tr>
+    <tr><td>JSON 校验</td><td>字段是否存在</td></tr>
+    <tr><td>引用校验</td><td>used_sources 是否来自实际召回</td></tr>
+    <tr><td>业务复核</td><td>资料是否真正支持回答，结论是否完整</td></tr>
+  </table>
+  <div class="warn box">
+    JSON 格式正确不等于业务回答正确。引用编号存在也不等于资料一定相关。
+  </div>
+
+  <h2><span class="num">8</span>自查清单</h2>
+  <ul>
+    <li>能区分模型参数记忆和外部资料。</li>
+    <li>能说明 RAG 为什么不会修改模型参数。</li>
+    <li>知道为什么要按章节切分。</li>
+    <li>知道检索分数不是准确率。</li>
+    <li>知道检索资料如何进入 messages。</li>
+    <li>知道程序校验和人工复核的区别。</li>
+  </ul>
+
+  <h2><span class="num">9</span>来源与参考</h2>
+  <table>
+    <tr><th>资料</th><th>链接</th></tr>
+    <tr><td>RAG 原始论文</td><td><code>https://arxiv.org/abs/2005.11401</code></td></tr>
+    <tr><td>RAG 综述</td><td><code>https://arxiv.org/abs/2312.10997</code></td></tr>
+    <tr><td>DeepSeek JSON Output</td><td><code>https://api-docs.deepseek.com/guides/json_mode</code></td></tr>
+  </table>
+  <p class="note">论文和官方文档页面在课程建立时已核实可访问。接口行为和模型能力可能变化，使用前应重新核对官方页面。</p>
+
+  <div class="footer">
+    <span>第 4 课 · RAG 基础</span>
+    <span>生成日期 2026-09-30</span>
+  </div>
+</body>
+</html>
