@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_PATH = BASE_DIR / "1.3-chunks.json"
+OUTPUT_PATH = BASE_DIR / "1.3-chunks.json"   # 输出文件路径
 
 POLICY_TEXT = """# 门诊信息系统故障分级与处理办法
 
@@ -26,7 +26,7 @@ P1 表示影响关键诊疗且没有替代方案，需要立即升级。P2 表�
 
 
 def split_by_sections(text):
-    section_pattern = re.compile(r"^##\s+(.+)$", re.MULTILINE)
+    section_pattern = re.compile(r"^##\s+(.+)$", re.MULTILINE) #匹配 Markdown 中的二级标题（## 标题），并把标题文字提取出来
     matches = list(section_pattern.finditer(text))
     chunks = []
 
