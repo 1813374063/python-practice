@@ -1,0 +1,25 @@
+{
+  "question": "门诊日报汇总数和明细数不一致，应该核对哪些内容？",
+  "retrieved_ids": [
+    "KB-007",
+    "KB-001"
+  ],
+  "answer": {
+    "answer": "根据 [KB-007]，门诊日报汇总与明细不一致时，应固定统计时间范围、科室范围和指标口径，并核对源数据、清洗规则和报表计算公式；同时保留查询条件和结果作为证据。",
+    "used_sources": [
+      "KB-007"
+    ],
+    "insufficient": false,
+    "need_human_review": false
+  },
+  "usage": {
+    "prompt_tokens": 355,
+    "completion_tokens": 164,
+    "reasoning_tokens": 92,
+    "visible_completion_tokens": 72,
+    "total_tokens": 519,
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 355,
+    "finish_reason": "stop"
+  }
+}

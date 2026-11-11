@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git 知识卡片 · 从本地代码到 GitHub</title>
+<style>
+  * { box-sizing: border-box; }
+  html { background: #eef1f4; }
+  body {
+    margin: 0 auto; padding: 56px 64px 48px; background: #ffffff; color: #1f2937;
+    font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.75; max-width: 1240px;
+  }
+  .title { font-size: 42px; font-weight: 700; margin: 0 0 6px; color: #111827; }
+  .subtitle { font-size: 18px; color: #6b7280; margin: 0 0 18px; }
+  .rule { height: 5px; width: 120px; background: #0f766e; border-radius: 3px; margin-bottom: 40px; }
+  h2 {
+    font-size: 25px; margin: 46px 0 16px; padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 12px; color: #111827;
+  }
+  h2 .num {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 34px; height: 34px; border-radius: 50%; background: #0f766e; color: #fff;
+    font-size: 18px; font-weight: 700;
+  }
+  h2.warn-head { border-bottom-color: #fcd34d; }
+  h2.warn-head .num { background: #b45309; }
+  h3 { font-size: 19px; margin: 24px 0 10px; color: #0f766e; }
+  p { margin: 10px 0; }
+  code {
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 15.5px;
+    background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 6px; color: #0f172a;
+  }
+  pre {
+    background: #f8fafc; border: 1px solid #e5e7eb; border-left: 4px solid #0f766e;
+    border-radius: 6px; padding: 14px 18px; margin: 12px 0; overflow-x: auto;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 15.5px; line-height: 1.65; color: #0f172a;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: 15.5px; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 16.5px; }
+  th { background: #f3f4f6; text-align: left; font-weight: 700; color: #111827; }
+  th, td { border: 1px solid #e5e7eb; padding: 10px 14px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  .flow { display: flex; align-items: stretch; margin: 18px 0 8px; }
+  .flow .box {
+    flex: 1; border: 2px solid #0f766e; border-radius: 8px; padding: 12px 8px; text-align: center;
+    background: #ecfdf5; font-weight: 700; font-size: 16.5px; color: #065f46;
+  }
+  .flow .box small { display: block; font-weight: 400; font-size: 14px; color: #4b5563; margin-top: 4px; }
+  .flow .arrow {
+    flex: none; width: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #0f766e; font-weight: 700; font-size: 15px;
+  }
+  .flow .arrow .line { font-size: 22px; line-height: 1; }
+  .chant { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 14px 20px; margin: 16px 0; }
+  .chant div { margin: 6px 0; }
+  .alert { background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #b45309; border-radius: 8px; padding: 14px 20px; margin: 16px 0; }
+  ol, ul { margin: 10px 0; padding-left: 26px; }
+  li { margin: 6px 0; }
+  .step { margin: 20px 0; }
+  .step .h { font-weight: 700; color: #111827; margin-bottom: 6px; }
+  .note { color: #6b7280; font-size: 15.5px; }
+  .footer {
+    margin-top: 48px; padding-top: 18px; border-top: 2px solid #e5e7eb; color: #9ca3af; font-size: 15px;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  @media (max-width: 860px) {
+    body { padding: 28px 20px; font-size: 16px; }
+    .title { font-size: 30px; }
+    h2 { font-size: 21px; }
+    .flow { flex-direction: column; }
+    .flow .arrow { width: auto; padding: 6px 0; }
+    .flow .arrow .line { transform: rotate(90deg); }
+    pre { font-size: 14px; }
+    table { font-size: 15px; }
+  }
+  @media print {
+    html { background: #fff; }
+    body { max-width: none; padding: 0; }
+    pre, table, .chant, .alert, .flow .box { break-inside: avoid; }
+    .step, h2 { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+  <div class="title">Git 知识卡片</div>
+  <div class="subtitle">从本地代码到 GitHub：完整流程 · 安全红线 · 自查工具箱 · 报错速查</div>
+  <div class="rule"></div>
+
+  <h2><span class="num">1</span>四个区域，一张图看懂</h2>
+  <div class="flow">
+    <div class="box">工作区<small>你正在编辑的文件夹</small></div>
+    <div class="arrow"><span class="line">&rarr;</span>git add</div>
+    <div class="box">暂存区<small>这次要提交的改动清单</small></div>
+    <div class="arrow"><span class="line">&rarr;</span>git commit</div>
+    <div class="box">本地仓库<small>你电脑上的存档历史</small></div>
+    <div class="arrow"><span class="line">&rarr;</span>git push</div>
+    <div class="box">远程仓库<small>GitHub 上的副本</small></div>
+  </div>
+  <table>
+    <tr><th style="width:20%">区域</th><th style="width:44%">是什么</th><th>对应命令</th></tr>
+    <tr><td>工作区</td><td>你正在编辑的文件夹</td><td><code>改文件本身</code></td></tr>
+    <tr><td>暂存区</td><td>待提交清单，决定这次包含哪些改动</td><td><code>git add</code></td></tr>
+    <tr><td>本地仓库</td><td>你电脑上的存档历史（<code>.git</code> 文件夹）</td><td><code>git commit</code></td></tr>
+    <tr><td>远程仓库</td><td>GitHub 上的副本</td><td><code>git push</code></td></tr>
+  </table>
+  <div class="chant">
+    <div><code>git add</code> = <b>挑菜</b>，决定这顿吃什么</div>
+    <div><code>git commit</code> = <b>打包封存</b>，贴标签存档</div>
+    <div><code>git push</code> = <b>送货上门</b>，同步到 GitHub</div>
+    <div><code>git pull</code> = <b>取货</b>，把远程更新拉回本地</div>
+  </div>
+  <p class="note">为什么要分两步？因为一次提交可以只包含部分改动（比如"改脚本"和"补文档"分两次提交），历史才清晰，出问题也能精确回退。</p>
+
+  <h2><span class="num">2</span>首次上传：完整流程</h2>
+
+  <div class="step">
+    <div class="h">第 0 步：配置身份（每台电脑只做一次）</div>
+    <pre><code>git config --global user.name "你的名字"
+git config --global user.email "GitHub绑定的邮箱"</code></pre>
+    <p><code>user.name</code> 只是提交记录里的署名，中文也行；<code>user.email</code> 必须是 GitHub 账号<b>绑定并验证过</b>的邮箱，否则提交不会关联到你的账号（头像和贡献记录都不会显示）。</p>
+  </div>
+
+  <div class="step">
+    <div class="h">第 1 步：把文件夹变成仓库</div>
+    <pre><code>cd 项目文件夹路径
+git init</code></pre>
+  </div>
+
+  <div class="step">
+    <div class="h">第 2 步（必做）：创建 .gitignore</div>
+    <pre><code>__pycache__/
+*.db
+key.txt</code></pre>
+    <p class="note">具体该写什么，见第 4 节"安全线"。</p>
+  </div>
+
+  <div class="step">
+    <div class="h">第 3 步：提交第一个存档</div>
+    <pre><code>git add .
+git commit -m "说明这次做了什么"</code></pre>
+  </div>
+
+  <div class="step">
+    <div class="h">第 4 步：在 GitHub 上建仓库</div>
+    <p>网页操作：右上角 <code>+</code> &rarr; New repository &rarr; 填名字 &rarr; 选 Public &rarr; <b>不要</b>勾选 README / .gitignore / license（保持空仓库，避免和本地冲突）&rarr; Create。</p>
+  </div>
+
+  <div class="step">
+    <div class="h">第 5 步：连接远程仓库</div>
+    <pre><code>git remote add origin https://github.com/登录名/仓库名.git</code></pre>
+    <p class="note"><code>origin</code> 是给远程地址起的绰号，约定俗成。登录名是 <code>github.com/xxx</code> 里的 xxx，<b>不是昵称</b>（昵称可以有中文，登录名不行）。</p>
+  </div>
+
+  <div class="step">
+    <div class="h">第 6 步：统一分支名</div>
+    <pre><code>git branch -M main</code></pre>
+    <p class="note">GitHub 默认叫 main，本地新建仓库默认叫 master，改成一致。<code>-M</code> 大写表示强制改名。</p>
+  </div>
+
+  <div class="step">
+    <div class="h">第 7 步：推送</div>
+    <pre><code>git push -u origin main</code></pre>
+    <p class="note"><code>-u</code> 建立追踪关系，之后只需敲 <code>git push</code>。首次推送会弹浏览器要求授权，点同意即可。</p>
+  </div>
+
+  <div class="step">
+    <div class="h">第 8 步：验证</div>
+    <p>刷新 GitHub 页面看到文件；终端里 <code>git status</code> 显示 <code>nothing to commit, working tree clean</code>。</p>
+  </div>
+
+  <h2><span class="num">3</span>日常三连与提交信息</h2>
+  <pre><code>git add .
+git commit -m "这次改了什么"
+git push</code></pre>
+  <h3>提交信息怎么写</h3>
+  <ul>
+    <li>说清"做了什么"：<code>添加sqlite3练习脚本</code> 比 <code>更新</code> 有用一百倍</li>
+    <li>一条提交只做一件事：改脚本和补文档分两次提交</li>
+    <li>动词开头：添加 / 修正 / 删除 / 重构</li>
+  </ul>
+  <p class="note">每完成一段工作就提交一次。提交记录本身就是你的学习履历，面试时可以直接把仓库链接发过去。</p>
+
+  <h2 class="warn-head"><span class="num">4</span>安全线：哪些文件绝对不能进仓库</h2>
+  <table>
+    <tr><th style="width:22%">类型</th><th style="width:24%">例子</th><th>为什么</th></tr>
+    <tr><td>密钥、密码</td><td><code>key.txt</code>、<code>.env</code></td><td>泄露等于别人拿你的账号花钱。而且<b>即使之后删除，git 历史里依然能翻出来</b>，只能作废重发</td></tr>
+    <tr><td>数据库文件</td><td><code>*.db</code></td><td>二进制文件，GitHub 无法预览内容；脚本能自动生成；每次运行都变动，制造噪音</td></tr>
+    <tr><td>缓存、编译产物</td><td><code>__pycache__/</code></td><td>机器自动生成，没有保留价值</td></tr>
+  </table>
+  <div class="alert">
+    <b>一句话原则</b>：能自动生成的、含密码的，都不进仓库。仓库里只放源码、文档、配置模板。
+  </div>
+  <h3>三道验证（缺一不可）</h3>
+  <table>
+    <tr><th style="width:40%">命令</th><th>作用</th></tr>
+    <tr><td><code>git check-ignore -v 文件名</code></td><td>查出是 .gitignore 里哪一条规则拦住了它</td></tr>
+    <tr><td><code>git status --ignored</code></td><td>列出所有被忽略的文件（前面标 <code>!!</code>）</td></tr>
+    <tr><td><code>git ls-files</code></td><td>列出仓库里所有已跟踪的文件——用<b>它确认密钥确实不在其中</b></td></tr>
+  </table>
+  <p class="note">提交含密钥的代码后，正确做法是：立刻去平台重置密钥，再用上面的三道验证确认新密钥没有再进仓库。</p>
+
+  <h2><span class="num">5</span>自查工具箱：常用查看命令</h2>
+  <table>
+    <tr><th style="width:36%">命令</th><th>看什么</th></tr>
+    <tr><td><code>git status</code></td><td>当前有哪些改动、哪些已暂存、是否与远程同步</td></tr>
+    <tr><td><code>git log --oneline</code></td><td>提交历史，一行一条，看自己干过什么</td></tr>
+    <tr><td><code>git remote -v</code></td><td>远程仓库地址，排查"推错地方"</td></tr>
+    <tr><td><code>git branch -vv</code></td><td>分支列表和追踪关系，确认自己在哪个分支</td></tr>
+    <tr><td><code>git check-ignore -v 文件名</code></td><td>文件为什么没进仓库</td></tr>
+    <tr><td><code>git ls-files</code></td><td>仓库里到底有哪些文件被跟踪</td></tr>
+  </table>
+
+  <h2><span class="num">6</span>状态符号表（git status 常看）</h2>
+  <table>
+    <tr><th style="width:34%">符号</th><th>含义</th></tr>
+    <tr><td><code>??</code></td><td>未跟踪的新文件（git 还不认识它）</td></tr>
+    <tr><td><code>A</code></td><td>已加入暂存区的新文件</td></tr>
+    <tr><td><code>M</code></td><td>已修改的文件</td></tr>
+    <tr><td><code>D</code></td><td>已删除的文件</td></tr>
+    <tr><td><code>!!</code></td><td>被忽略的文件（不会进仓库）</td></tr>
+    <tr><td>无输出 / <code>clean</code></td><td>所有改动都已提交，干净</td></tr>
+    <tr><td><code>## main...origin/main</code></td><td>本地和远程<b>完全同步</b></td></tr>
+    <tr><td><code>## main...origin/main [ahead 1]</code></td><td>有 1 个提交还没推上去，补一条 <code>git push</code></td></tr>
+  </table>
+
+  <h2><span class="num">7</span>报错速查表</h2>
+  <table>
+    <tr><th style="width:36%">报错 / 提示</th><th style="width:26%">原因</th><th>解决</th></tr>
+    <tr><td><code>Nothing specified, nothing added</code></td><td><code>git add</code> 后面漏了点</td><td><code>git add .</code></td></tr>
+    <tr><td><code>nothing added to commit but untracked files present</code></td><td>还没 add 就 commit</td><td>先 <code>git add .</code></td></tr>
+    <tr><td><code>error: remote origin already exists</code></td><td>已经登记过 origin</td><td><code>git remote set-url origin 新地址</code></td></tr>
+    <tr><td><code>error: switch 'm' requires a value</code></td><td><code>-M</code> 后面没跟分支名</td><td><code>git branch -M main</code></td></tr>
+    <tr><td><code>Please tell me who you are</code></td><td>身份没配置</td><td>执行第 0 步</td></tr>
+    <tr><td><code>rejected ... fetch first</code></td><td>远程有本地没有的提交</td><td><code>git pull --rebase origin main</code> 后再 push</td></tr>
+    <tr><td><code>Repository not found</code></td><td>用户名或仓库名写错</td><td><code>git remote -v</code> 核对地址</td></tr>
+    <tr><td><b>文件放进去了但 GitHub 上看不到</b></td><td>被 .gitignore 拦住了</td><td><code>git check-ignore -v 文件名</code> 查原因</td></tr>
+    <tr><td><code>LF will be replaced by CRLF</code>（warning）</td><td>Windows 与 Linux 换行符差异</td><td>正常现象，忽略</td></tr>
+  </table>
+
+  <h2><span class="num">8</span>踩坑复盘（真实经历）</h2>
+  <ol>
+    <li><b>占位符必须替换</b>：模板里写"你的登录名"，就不能原样粘贴，否则网址里会真的出现这五个中文字。</li>
+    <li><b>命令末尾的点不能丢</b>：<code>git add .</code> 里的点代表"当前目录下所有改动"。</li>
+    <li><b>先 commit 再 push</b>：顺序是 add &rarr; commit &rarr; push，跨过任何一步都会卡住。</li>
+    <li><b>pull 和 push 方向相反</b>：pull 把远程改动拉下来，push 才把本地提交送上去。</li>
+    <li><b>数据库文件"消失"：被 .gitignore 挡住了</b>。这是它在正常工作——<code>*.db</code> 本来就不该进仓库。</li>
+    <li><b>提交前后各看一次 status</b>：add 之后如果没看到期待的文件，先怀疑忽略规则。</li>
+    <li><b>报错信息会给答案</b>：<code>Maybe you wanted to say 'git add .'?</code> 就是 git 自己把正确写法告诉你了。</li>
+  </ol>
+
+  <div class="footer">
+    <span>整理自实际操作过程 · 每一步都踩过坑</span>
+    <span>Python 转行学习计划 · 第 1 阶段</span>
+  </div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学习卡片 05 · 接口文档与代码数据流</title>
+<style>
+  * { box-sizing: border-box; }
+  html { background: #eef1f4; }
+  body {
+    margin: 0 auto; padding: 56px 64px 48px; background: #ffffff; color: #1f2937;
+    font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.75; max-width: 1240px;
+  }
+  .kicker { display: inline-block; background: #0f766e; color: #fff; font-size: 15px; font-weight: 700;
+    padding: 4px 14px; border-radius: 999px; margin-bottom: 14px; }
+  .title { font-size: 40px; font-weight: 700; margin: 0 0 6px; color: #111827; }
+  .subtitle { font-size: 18px; color: #6b7280; margin: 0 0 18px; }
+  .rule { height: 5px; width: 120px; background: #0f766e; border-radius: 3px; margin-bottom: 40px; }
+  h2 { font-size: 25px; margin: 46px 0 16px; padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 12px; color: #111827; }
+  h2 .num { display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 34px; height: 34px; border-radius: 50%; background: #0f766e; color: #fff; font-size: 18px; font-weight: 700; }
+  h3 { font-size: 19px; margin: 24px 0 10px; color: #0f766e; }
+  p { margin: 10px 0; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 15.5px;
+    background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 6px; color: #0f172a; }
+  pre { background: #f8fafc; border: 1px solid #e5e7eb; border-left: 4px solid #0f766e;
+    border-radius: 6px; padding: 14px 18px; margin: 12px 0; overflow-x: auto;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 15px; line-height: 1.65; color: #0f172a; }
+  pre code { background: none; border: none; padding: 0; font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 16.5px; }
+  th { background: #f3f4f6; text-align: left; font-weight: 700; color: #111827; }
+  th, td { border: 1px solid #e5e7eb; padding: 10px 14px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  .box { border: 1px solid #dbeafe; background: #eff6ff; border-radius: 6px; padding: 14px 18px; margin: 14px 0; }
+  .warn { border-color: #fed7aa; background: #fff7ed; }
+  .good { border-color: #bbf7d0; background: #f0fdf4; }
+  ul { margin: 8px 0 8px 22px; padding: 0; }
+  li { margin: 5px 0; }
+  .footer { margin-top: 52px; padding-top: 18px; border-top: 1px solid #e5e7eb;
+    display: flex; justify-content: space-between; color: #6b7280; font-size: 14px; }
+  @media (max-width: 720px) {
+    body { padding: 28px 20px 36px; font-size: 16px; }
+    .title { font-size: 30px; }
+    h2 { font-size: 22px; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+  <div class="kicker">第 2 阶段 · 接口基础</div>
+  <h1 class="title">接口文档与代码数据流</h1>
+  <p class="subtitle">一条工单如何从输入走向模型，再变成可校验的评估结果</p>
+  <div class="rule"></div>
+
+  <h2><span class="num">1</span>本卡目标</h2>
+  <ul>
+    <li>能把官方接口文档拆成“请求字段”和“响应字段”。</li>
+    <li>能看懂 <code>required</code>、<code>nullable</code>、<code>Default value</code> 等标记。</li>
+    <li>能把接口字段与 <code>prompt_eval.py</code> 的具体代码位置对应起来。</li>
+    <li>能追踪一条工单从输入、组装、调用、解析、校验到汇总的完整数据流。</li>
+  </ul>
+
+  <h2><span class="num">2</span>最重要的总结构</h2>
+  <pre><code>请求 Request
+→ 程序告诉模型：使用什么规则、处理什么任务、返回什么格式
+
+响应 Response
+→ 模型告诉程序：回答正文、结束原因、token 用量</code></pre>
+  <table>
+    <tr><th>阶段</th><th>代表字段</th><th>一句话</th></tr>
+    <tr><td>请求</td><td><code>model</code></td><td>选择哪个模型</td></tr>
+    <tr><td>请求</td><td><code>messages</code></td><td>发送规则、历史、示例和当前任务</td></tr>
+    <tr><td>请求</td><td><code>response_format</code></td><td>选择文本或 JSON 输出</td></tr>
+    <tr><td>请求</td><td><code>max_tokens</code></td><td>限制生成 token 总量</td></tr>
+    <tr><td>响应</td><td><code>choices[0].message.content</code></td><td>读取可见正文</td></tr>
+    <tr><td>响应</td><td><code>choices[0].finish_reason</code></td><td>判断为什么停止生成</td></tr>
+    <tr><td>响应</td><td><code>usage</code></td><td>查看 token 工作量</td></tr>
+  </table>
+
+  <h2><span class="num">3</span>官方文档的字段标记</h2>
+  <table>
+    <tr><th>标记</th><th>含义</th></tr>
+    <tr><td><code>string</code>、<code>number</code>、<code>object</code>、<code>array</code></td><td>字段的数据类型</td></tr>
+    <tr><td><code>required</code></td><td>调用接口时必须提供</td></tr>
+    <tr><td><code>nullable</code></td><td>可选，不传时使用默认行为</td></tr>
+    <tr><td><code>Default value</code></td><td>不传时的默认值</td></tr>
+    <tr><td><code>Possible values</code></td><td>允许的取值或范围</td></tr>
+  </table>
+  <div class="box">
+    示例：<code>model string required</code> 表示字段名为 <code>model</code>，类型是字符串，而且必须传值。
+  </div>
+
+  <h2><span class="num">4</span>请求字段</h2>
+  <h3>4.1 model</h3>
+  <pre><code>model = "deepseek-flash"</code></pre>
+  <p>指定由哪个模型处理请求。可选模型会变化，以官方文档和当前账号为准。</p>
+
+  <h3>4.2 messages</h3>
+  <pre><code>messages = [
+    {"role": "system", "content": "分类规则和 JSON 格式"},
+    {"role": "user", "content": "示例工单"},
+    {"role": "assistant", "content": "标准答案"},
+    {"role": "user", "content": "当前新工单"},
+]</code></pre>
+  <table>
+    <tr><th>角色</th><th>作用</th></tr>
+    <tr><td><code>system</code></td><td>任务、规则、限制、输出格式</td></tr>
+    <tr><td><code>user</code></td><td>用户输入或 Few-shot 示例输入</td></tr>
+    <tr><td><code>assistant</code></td><td>模型历史回答或 Few-shot 标准答案</td></tr>
+  </table>
+  <div class="box warn">
+    DeepSeek 多轮对话文档说明接口是 stateless，服务器不会记录请求上下文。需要的历史必须由程序每次重新发送。
+  </div>
+
+  <h3>4.3 response_format</h3>
+  <pre><code>response_format={"type": "json_object"}</code></pre>
+  <p>开启 JSON Output 后，接口保证生成内容是合法 JSON，但不会保证业务字段完整，也不会保证分类一定正确。提示词还要说明字段和结构，程序还要继续校验。</p>
+
+  <h3>4.4 max_tokens</h3>
+  <pre><code>max_tokens=4000</code></pre>
+  <p>限制本次生成 token 总量。它不只包括最终正文，也可能包括推理 token。额度不足时会出现 <code>finish_reason="length"</code>，正文可能不完整或为空。</p>
+
+  <h3>4.5 temperature 与 thinking</h3>
+  <table>
+    <tr><th>字段</th><th>结论</th></tr>
+    <tr><td><code>temperature</code></td><td>范围 0 到 2，默认 1，值越低通常越集中</td></tr>
+    <tr><td><code>temperature</code> 与 thinking</td><td>官方文档说明 thinking mode 下 temperature 没有效果</td></tr>
+    <tr><td><code>thinking</code></td><td>控制是否进入思考模式，当前文档默认 enabled</td></tr>
+    <tr><td><code>reasoning_effort</code></td><td>none、low、high、max，默认 high</td></tr>
+  </table>
+
+  <h2><span class="num">5</span>响应字段</h2>
+  <pre><code>content = response.choices[0].message.content
+finish_reason = response.choices[0].finish_reason
+usage = response.usage</code></pre>
+  <table>
+    <tr><th>字段</th><th>含义</th></tr>
+    <tr><td><code>choices</code></td><td>候选回答列表</td></tr>
+    <tr><td><code>choices[0]</code></td><td>第一个候选回答</td></tr>
+    <tr><td><code>message.content</code></td><td>可见正文</td></tr>
+    <tr><td><code>finish_reason=stop</code></td><td>正常结束</td></tr>
+    <tr><td><code>finish_reason=length</code></td><td>达到生成或上下文长度上限</td></tr>
+  </table>
+  <h3>usage 的公式与边界</h3>
+  <pre><code>total_tokens = prompt_tokens + completion_tokens</code></pre>
+  <div class="box warn">
+    <code>completion_tokens</code> 不只包含最终可见正文，还可能包含推理 token。因此可能出现 completion_tokens 很大，但 content 很短或为空。
+  </div>
+
+  <h2><span class="num">6</span>prompt_eval.py 六阶段数据流</h2>
+  <table>
+    <tr><th>阶段</th><th>代码位置</th><th>输入到输出</th></tr>
+    <tr><td>01 输入工单</td><td>第 176 行</td><td><code>TEST_CASES</code> → <code>case</code> 字典</td></tr>
+    <tr><td>02 组装请求</td><td><code>build_messages()</code> 第 118 到 137 行</td><td>规则、示例、新工单 → <code>messages</code> 列表</td></tr>
+    <tr><td>03 调用模型</td><td><code>call_model()</code> 第 142 到 147 行</td><td>请求字段 → <code>response</code> 对象</td></tr>
+    <tr><td>04 解析响应</td><td>第 149 到 153 行</td><td>JSON 字符串 → Python 字典</td></tr>
+    <tr><td>05 校验结果</td><td><code>validate_result()</code> 第 160 到 171 行</td><td>检查字段、类别和优先级</td></tr>
+    <tr><td>06 汇总存档</td><td>第 185 到 246 行</td><td>实际值与预期值 → 准确率和 JSON 文件</td></tr>
+  </table>
+
+  <h2><span class="num">7</span>JSON 与 Python 的类型转换</h2>
+  <pre><code>json.loads(content)      # JSON 字符串 → Python 字典
+json.dumps(data)         # Python 字典 → JSON 字符串
+json.dump(data, file)    # Python 数据 → 写入文件</code></pre>
+  <table>
+    <tr><th>JSON 内容</th><th>Python 类型</th></tr>
+    <tr><td>对象</td><td><code>dict</code></td></tr>
+    <tr><td>数组</td><td><code>list</code></td></tr>
+    <tr><td>整数或小数</td><td><code>int</code> 或 <code>float</code></td></tr>
+    <tr><td>字符串</td><td><code>str</code></td></tr>
+    <tr><td>true / false</td><td><code>bool</code></td></tr>
+    <tr><td>null</td><td><code>None</code></td></tr>
+  </table>
+
+  <h2><span class="num">8</span>真实踩坑与结论</h2>
+  <table>
+    <tr><th>现象</th><th>原因</th><th>处理</th></tr>
+    <tr><td>模型返回空字符串</td><td>1200 个 token 被推理过程耗尽，finish_reason 为 length</td><td>提高 max_tokens，并加入有限重试</td></tr>
+    <tr><td>JSON 解析失败</td><td>模型没有返回合法 JSON</td><td>捕获 JSONDecodeError，使用 raise ... from 保留原因</td></tr>
+    <tr><td>字段缺失</td><td>JSON 语法合法，但业务结构不完整</td><td>使用集合差集检查必要字段</td></tr>
+    <tr><td>8/8 准确率</td><td>测试集小，且部分样例与 Few-shot 示例重合</td><td>不能外推为真实生产准确率</td></tr>
+  </table>
+  <div class="box good">
+    当前目标的最终标准不是背下代码，而是能回答：输入在哪里、请求在哪里组装、模型在哪里调用、响应在哪里解析、结果在哪里校验和保存。
+  </div>
+
+  <h2><span class="num">9</span>来源与参考</h2>
+  <table>
+    <tr><th>资料</th><th>链接</th></tr>
+    <tr><td>DeepSeek Chat Completion API</td><td><code>https://api-docs.deepseek.com/api/create-chat-completion</code></td></tr>
+    <tr><td>DeepSeek JSON Output</td><td><code>https://api-docs.deepseek.com/guides/json_mode</code></td></tr>
+    <tr><td>DeepSeek Multi-round Conversation</td><td><code>https://api-docs.deepseek.com/guides/multi_round_chat</code></td></tr>
+    <tr><td>Python json 模块</td><td><code>https://docs.python.org/3/library/json.html</code></td></tr>
+    <tr><td>Python 异常处理</td><td><code>https://docs.python.org/3/tutorial/errors.html</code></td></tr>
+  </table>
+  <p class="note">DeepSeek 官方页面于 2026-09-28 实测 HTTP 200。接口字段、默认值和模型行为可能变化，使用前应重新核对官方页面。</p>
+
+  <div class="footer">
+    <span>学习卡片 05 · 第 2 阶段 接口基础</span>
+    <span>生成日期 2026-09-28</span>
+  </div>
+</body>
+</html>

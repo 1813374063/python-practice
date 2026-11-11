@@ -1,0 +1,46 @@
+{
+  "mode": "smoke",
+  "mode_label": "冒烟测试",
+  "total_cases": 1,
+  "completed_cases": 1,
+  "failed_cases": 0,
+  "category_correct": 1,
+  "priority_correct": 1,
+  "category_accuracy": 1.0,
+  "priority_accuracy": 1.0,
+  "elapsed_seconds_total": 1.98,
+  "usage_totals": {
+    "prompt_tokens": 398,
+    "completion_tokens": 175,
+    "reasoning_tokens": 115,
+    "visible_completion_tokens": 60,
+    "total_tokens": 573,
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 142
+  },
+  "results": [
+    {
+      "index": 1,
+      "ticket": "医生保存病历时提示第三方接口超时，当前无法完成保存。",
+      "expected_category": "接口与集成",
+      "actual_category": "接口与集成",
+      "expected_priority": "P1",
+      "actual_priority": "P1",
+      "category_correct": true,
+      "priority_correct": true,
+      "reason": "医生保存病历依赖第三方接口，接口超时导致病历无法保存，直接影响关键诊疗文书记录且当前无替代保存方案，可能涉及患者安全。",
+      "need_human_review": true,
+      "elapsed_seconds": 1.98,
+      "usage": {
+        "prompt_tokens": 398,
+        "completion_tokens": 175,
+        "reasoning_tokens": 115,
+        "visible_completion_tokens": 60,
+        "total_tokens": 573,
+        "prompt_cache_hit_tokens": 256,
+        "prompt_cache_miss_tokens": 142,
+        "finish_reason": "stop"
+      }
+    }
+  ]
+}
