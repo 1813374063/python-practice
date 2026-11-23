@@ -25,3 +25,9 @@ auth_token.txt
 .idea/
 .DS_Store
 Thumbs.db
+
+# 历史归档（本地保留，不上传）
+history_file/
+
+# 临时截图
+now_file_list.jpg

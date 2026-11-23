@@ -6,9 +6,11 @@
 
 | 路径 | 说明 |
 |---|---|
-| `ai_practice/` | 学习内容，按 `LEARNING_RULES.md` 规则组织 |
-| `LEARNING_PLAN.md` | 12 周学习计划（现状盘点 / 复习清单 / 逐周日程） |
-| `LEARNING_SCHEDULE.xlsx` | 打卡表（总日程 / 每周节奏 / 复习清单 / 面试 30 题） |
+| `phase02-data-analysis/` | 当前学习内容（阶段 1 SQL → 阶段 2 pandas → …） |
+| `LEARNING_PLAN_V2.md` | 当前学习计划（现状评估 / 阶段式路线 / 分阶段投递） |
+| `求职/` | 简历与求职材料 |
+| `history_file/` | 历史学习归档（本地保留，不上传 GitHub） |
+| `key.txt` | 大模型 API 密钥（已被 `.gitignore` 忽略，不上传） |
 
 ## 本地环境
 
@@ -18,4 +20,4 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-密钥文件 `ai_practice/key.txt` 已被 `.gitignore` 忽略，不会上传到 GitHub。
+密钥文件 `key.txt` 已被 `.gitignore` 忽略，不会上传到 GitHub。
