@@ -8,7 +8,7 @@ dps = pd.read_csv(base / 'data' / 'workload.csv', encoding='utf-8')
 print(dps.head())
 print(dps.shape)
 print(dps['接诊量'].unique())
-   # shape[0] 某个表是「有多少个数」（返回（行数，列数）），
+   # shape[0] 某个表是「有多少个数」（shape()返回（行数，列数）），
    # unique() 某列是「有多少种数」返回列表
 #1. 用 `to_numeric(errors="coerce")` 把「接诊量」转成数字，打印新类型。
 dps['接诊量'] = pd.to_numeric(dps['接诊量'],errors = 'coerce')

@@ -33,13 +33,14 @@ print()
 
 #5. 用 `pivot_table` 做「科室 × 月份」总接诊量交叉表。
 print('5. 用 `pivot_table` 做「科室 × 月份」总接诊量交叉表。')
-print(pds_2.pivot_table(index = '科室',columns = '月份',values = '接诊量',aggfunc = 'sum'))
+pds_4 = pds_2.pivot_table(index = '科室',columns = '月份',values = '接诊量',aggfunc = 'sum')
+print(pds_4)
 print()
 
 #6. 把 `aggfunc` 改成 `"mean"`，看「每科每月平均」交叉表，比较和上一题的区别。
 print('6. 把 `aggfunc` 改成 `"mean"`，看「每科每月平均」交叉表，比较和上一题的区别。')
-
-print(pds_2.pivot_table(index = '科室',columns = '月份',values = '接诊量',aggfunc = 'mean'))
+pds_5 = pds_2.pivot_table(index = '科室',columns = '月份',values = '接诊量',aggfunc = 'mean')
+print(pds_5)
 print()
 
 
@@ -53,7 +54,10 @@ print('8. （进阶）交叉表里，哪个「科室-月份」的接诊量最高
 
 print(pds_2.pivot_table(index = '科室',columns = '月份',values = '接诊量',aggfunc = 'sum').stack().idxmax())
 
-print('二维表(交叉表)想「找谁最大」，就先 .stack() 摊平，再 .idxmax() 拿坐标；想「最大值多少」就用 .max().max()。') 
+print(pds_2.pivot_table(index = '科室',columns = '月份',values = '接诊量',aggfunc = 'sum').max().max())
+ 
+print('二维表(交叉表)想「找谁最大」，就先 .stack() 摊平，再 .idxmax() 拿坐标（（"行","列"））；想「最大值结果是多少」就用 .max().max()。'  
+       "('儿科', '3月')  140.0") 
 
 '''示例
 科室  月份
