@@ -14,7 +14,7 @@ print(dps['接诊量'].unique())
 dps['接诊量'] = pd.to_numeric(dps['接诊量'],errors = 'coerce')
 print(dps['接诊量'].dtype)
 
-#2. 有多少个缺失值（NaN）？
+#2. 总共有多少个缺失值（NaN）？
 print(dps['接诊量'].isna().sum())
 
 #3.接诊量的**总接诊量 / 平均值 / 最高 / 最低**各是多少？（一句话分别打印）
@@ -25,7 +25,7 @@ print(dps['接诊量'].min())
 
 #4. 用 `dropna` 得到干净数据，打印它的 `shape`。  df.dropna(subset='列') 整行删除
 dps_2 = dps.dropna(subset = '接诊量')
-print(dps_2) 
+print(dps_2.shape) 
 #5. 用 `fillna` 把缺失值填成**该列的平均值**，打印原来那 3 行现在变成了什么。
 print()
 print('#5. 用 `fillna` 把缺失值填成**该列的平均值**，打印原来那 3 行现在变成了什么。')

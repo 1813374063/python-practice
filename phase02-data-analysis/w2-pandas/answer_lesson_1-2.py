@@ -17,6 +17,7 @@ print(df[df['接诊量_nums']>120])
 print()
 
 print(df[(df['科室']=='儿科') & (df['接诊量_nums']>130)])
+print()
 
 a= df.loc[2,'月份']
 print(a)

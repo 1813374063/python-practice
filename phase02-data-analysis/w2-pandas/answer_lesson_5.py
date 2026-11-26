@@ -53,7 +53,7 @@ print('8. （进阶）交叉表里，哪个「科室-月份」的接诊量最高
 
 print(pds_2.pivot_table(index = '科室',columns = '月份',values = '接诊量',aggfunc = 'sum').stack().idxmax())
 
-print('二维表想「找谁最大」，就先 .stack() 摊平，再 .idxmax() 拿坐标；想「最大值多少」就用 .max().max()。') 
+print('二维表(交叉表)想「找谁最大」，就先 .stack() 摊平，再 .idxmax() 拿坐标；想「最大值多少」就用 .max().max()。') 
 
 '''示例
 科室  月份
