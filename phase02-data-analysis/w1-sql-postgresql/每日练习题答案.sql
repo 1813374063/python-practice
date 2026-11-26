@@ -372,17 +372,9 @@ from
 )
 
 
-select *,FIRST_VALUE(created_at) OVER (PARTITION BY dept_id ORDER BY created_at),LAST_VALUE(created_at) OVER (PARTITION BY dept_id ORDER BY created_at rows between unbounded preceding and unbounded following) 
- from tickets t 
- 
- 
- 
- rows between unbounded preceding and unbounded following  
- ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
- 
  
  '6.1	把 9 个科室按工单量均分成 3 档（NTILE(3)）'   -- 余数按照首份开始逐层递增
- select dept_id,count(*),NTILE(4)over(order by count(*) desc) from tickets t 
+ select dept_id,count(*),NTILE(3)over(order by count(*) desc) from tickets t 
  group by dept_id
  
  '6.2	把 35 张工单按创建时间均分成 4 组，标组号'-- 余数按照首份开始逐层递增
@@ -396,29 +388,29 @@ select *,FIRST_VALUE(created_at) OVER (PARTITION BY dept_id ORDER BY created_at)
  
  '每张工单 + 该科室最新工单的创建时间（LAST_VALUE，注意坑）'
  select t.*,last_value(t.created_at )over(partition by t.dept_id order by t.dept_id rows between unbounded preceding and unbounded following) from tickets t 
+ 
+ 
+
 
 '6.5	各科室每月接诊量 + 该科室第一个月接诊量'
  select v.dept_id,v.patient_count,first_value(v.patient_count)over(partition by v.dept_id order by v.dept_id,v.visit_month) from visits v 
  
  '6.6	各科室工单量，以及全局工单量最多的科室的工单量（对照 5.8)'
  
- with max_ft as(
- select distinct t.dept_id,count(t.ticket_id) over(partition by dept_id order by t.dept_id) as max_ticket  from tickets t 
- order by max_ticket desc 
- )
- select dept_id, max(max_ticket) over() from max_ft
+SELECT dept_id, COUNT(*) AS cnt,
+       MAX(COUNT(*)) OVER () AS global_max
+FROM tickets GROUP BY dept_id ORDER BY dept_id;
+
  
  '6.7各科室工单量占比（该科室/全局总数，百分比）'
  
- select distinct t.dept_id,round(count(*)over(partition by t.dept_id)::numeric/count(*)over()*100,2) from tickets t 
- order by round(count(*)over(partition by t.dept_id)::numeric/count(*)over()*100,2) desc 
+SELECT dept_id, COUNT(*) AS cnt,
+       ROUND(COUNT(*)::numeric / SUM(COUNT(*)) OVER () * 100, 2) AS pct
+FROM tickets GROUP BY dept_id ORDER BY dept_id;
  
  
 
  '6.8各科室接诊量最高月份的接诊量（FIRST_VALUE + 子查询组合）'
- select dept_id, visit_month, patient_count,max(v.patient_count)over(partition by v.dept_id order by v.dept_id) from visits v
-
- ------------------------------------------------------------------------------------------
 SELECT dept_id, visit_month, patient_count,
        FIRST_VALUE(patient_count) OVER (PARTITION BY dept_id ORDER BY patient_count DESC) AS dept_max
 FROM visits ORDER BY dept_id, visit_month;
@@ -426,7 +418,10 @@ FROM visits ORDER BY dept_id, visit_month;
 
 '7.1	各科室工单量 + RANK 名次 + DENSE_RANK 名次（并列看两列差别）'
 
-select t.dept_id,count(t.ticket_id)over(partition by t.dept_id order by t.dept_id ),rank()over(order by t.dept_id ),dense_rank()over(order by t.dept_id ) from tickets t 
+SELECT dept_id, COUNT(*) AS cnt,
+       RANK() OVER (ORDER BY COUNT(*) DESC) AS rk,
+       DENSE_RANK() OVER (ORDER BY COUNT(*) DESC) AS drk
+FROM tickets GROUP BY dept_id ORDER BY dept_id;
 
 '7.2 各科室 11 月 vs 10 月接诊量环比，按环比降序排列    -- 如果visit_month 列，10月份出现多日（10-01、10-3），脚本应该如何修改' '数据粒度 粒度 date_trunc date_trunc('month', 日期) 把任意日期"截断"成该月 1 号：' 
 
@@ -458,7 +453,7 @@ select *,lag(v.total )over(partition by v.dept_id order by ym ) count_9,lag(v.to
 select * from dsz  
 where count_8>count_9 and count_9>total
 
-'7.4	 每科室最早工单与第二早工单的时间差（天）'
+'7.4	 每科室最早工单与第二早工单的时间差（天）   -- FILTER子句用于聚合函数内条件过,      语法为:AGG_FUNC (...) FILTER (WHERE condition)，必须绑定聚合函数且仅限SELECT或HAVING中使用；不可用于窗口函数，也不能引用外部别名'
 WITH ranked AS (
   SELECT dept_id, created_at,
          ROW_NUMBER() OVER (PARTITION BY dept_id ORDER BY created_at) AS rn
@@ -472,7 +467,7 @@ WITH ranked AS (
 SELECT dept_id, d1, d2, d2 - d1 AS gap_days
 FROM first_two ORDER BY dept_id;
 
-'7.5	各科室工单量 vs 全局平均工单量，标出"高于平均/不高于" --- avg  对应的列值列值相加然后除以行数'
+'7.5	各科室工单量 vs 全局平均工单量，标出"高于平均/不高于" ---  avg  对应的列值列值相加然后除以行数'
 
 SELECT dept_id, cnt,
        AVG(cnt) OVER () AS global_avg,
@@ -481,8 +476,9 @@ FROM (SELECT dept_id, COUNT(*) AS cnt FROM tickets GROUP BY dept_id) t
 ORDER BY dept_id;
 
 '7.6	各工程师处理工单数排名（RANK，并列同名次）'
-select *,rank()over(order by cou desc ) from (
-select t.engineer_id ,count(*) as cou from tickets t  group by t.engineer_id  order by count(*) desc)
+SELECT engineer_id, COUNT(*) AS cnt,
+       RANK() OVER (ORDER BY COUNT(*) DESC) AS rk
+FROM tickets GROUP BY engineer_id;
 
 '7.7各科室每月接诊量 + 3 个月移动平均 + 当月与移动平均的差值其中边界可以写这些：
 
