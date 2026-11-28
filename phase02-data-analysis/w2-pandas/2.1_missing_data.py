@@ -35,7 +35,7 @@ print(df["接诊量"].isna().sum())
 print()
 
 # 4. 方式一：不处理，直接算（聚合函数自动跳过 NaN）
-print("=== 平均接诊量 mean()（自动跳过 3 个 NaN）===")
+print("=== 平均接诊量 mean()（自动跳过 3 个 NaN）===，聚合函数自动跳过 NaN")
 print(df["接诊量"].mean())
 print()
 print("=== 总接诊量 sum() / 最高 max() / 最低 min() ===")
